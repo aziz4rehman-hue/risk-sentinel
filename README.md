@@ -6,6 +6,8 @@ A risk agent for a paper book. It checks three rules and prints the breaches:
 - no open loss worse than 8% versus your average price
 - cash at least 10% of equity
 
+**[See the live demo](https://aziz4rehman-hue.github.io/risk-sentinel/)**
+
 **Not financial advice. It does not sell, hedge, or send an order.**
 
 ```bash

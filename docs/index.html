@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>risk-sentinel demo</title>
+<style>
+  :root { color-scheme: dark; --bg:#0c0f14; --card:#151b24; --line:#2a3444; --text:#e7edf5; --muted:#93a0b5; --accent:#ff8b7a; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:16px/1.45 ui-sans-serif, system-ui, sans-serif; background:var(--bg); color:var(--text); }
+  header, main { width:min(720px, calc(100% - 32px)); margin:0 auto; }
+  header { padding:28px 0 8px; }
+  .kicker { color:var(--accent); letter-spacing:.14em; text-transform:uppercase; font-size:12px; margin:0 0 8px; }
+  h1 { font-size:28px; margin:0 0 8px; }
+  p, label { color:var(--muted); }
+  a { color:var(--accent); }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
+  label { display:flex; flex-direction:column; gap:6px; font-size:13px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
+  input { background:#10151d; color:var(--text); border:1px solid var(--line); border-radius:10px; padding:10px; font:inherit; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin:14px 0 28px; white-space:pre-wrap; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:13px; }
+  .warn { color:#ffb4a8; } .ok { color:#9dface; }
+</style>
+</head>
+<body>
+<header>
+  <p class="kicker">Live demo</p>
+  <h1>risk-sentinel</h1>
+  <p>Concentration over 25%, open loss over 8%, cash under 10%. It only reports. <a href="https://github.com/aziz4rehman-hue/risk-sentinel">Source</a></p>
+</header>
+<main>
+  <div class="grid">
+    <label>Cash<input id="cash" type="number" min="0" step="10" value="80"></label>
+    <label>Symbol<input id="symbol" value="NVDA" maxlength="8"></label>
+    <label>Quantity<input id="qty" type="number" min="0" step="1" value="10"></label>
+    <label>Average price<input id="avg" type="number" min="0" step="1" value="100"></label>
+    <label>Last price<input id="last" type="number" min="0" step="1" value="80"></label>
+  </div>
+  <div class="panel" id="out"></div>
+</main>
+<script>
+const fields=["cash","symbol","qty","avg","last"];
+function review(){
+  const cash=+document.getElementById("cash").value;
+  const symbol=(document.getElementById("symbol").value||"?").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8)||"?";
+  const qty=+document.getElementById("qty").value;
+  const avg=+document.getElementById("avg").value;
+  const last=+document.getElementById("last").value;
+  const out=document.getElementById("out");
+  if(!(cash>=0)||!(qty>0)||!(avg>0)||!(last>0)){ out.className="panel warn"; out.textContent="error: cash must be 0 or more, and qty and prices must be positive"; return; }
+  const value=qty*last, equity=cash+value;
+  const lines=["risk sentinel — paper rules, not financial advice"];
+  const alerts=[];
+  if(equity<=0) alerts.push("CRITICAL equity equity is not positive");
+  else {
+    if(value/equity>0.25) alerts.push(`WARN concentration ${symbol} is ${(value/equity*100).toFixed(1)}% of equity (limit 25%)`);
+    const loss=(avg-last)/avg;
+    if(loss>0.08) alerts.push(`WARN drawdown ${symbol} last ${last.toFixed(2)} is ${(loss*100).toFixed(1)}% under average ${avg.toFixed(2)} (limit 8%)`);
+    if(cash/equity<0.10) alerts.push(`WARN cash cash is ${(cash/equity*100).toFixed(1)}% of equity (minimum 10%)`);
+    if(!alerts.length) alerts.push("INFO clear no rule breached");
+  }
+  lines.push(...alerts, `equity ${equity.toFixed(2)} cash ${cash.toFixed(2)}`);
+  out.textContent=lines.join("\n");
+  out.className="panel "+(alerts.some(a=>a.startsWith("WARN")||a.startsWith("CRITICAL"))?"warn":"ok");
+}
+fields.forEach(id=>document.getElementById(id).addEventListener("input", review));
+review();
+</script>
+</body>
+</html>
